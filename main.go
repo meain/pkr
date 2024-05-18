@@ -2,89 +2,65 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
 
-	"gioui.org/app"
-	"gioui.org/layout"
-	"gioui.org/op"
-	"gioui.org/widget"
-	"gioui.org/widget/material"
+	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/widget"
 )
 
-func getCompletions(input string) []string {
-	outs := []string{}
-
-	if len(input) == 0 {
-		return outs
-	}
-
-	for i := 1; i <= 10; i++ {
-		outs = append(outs, fmt.Sprintf("%s %d", input, i))
-	}
-
-	return outs
-}
-
 func main() {
-	go func() {
-		window := new(app.Window)
-		err := run(window)
-		if err != nil {
-			log.Fatal(err)
-		}
-		os.Exit(0)
-	}()
-	app.Main()
-}
+	myApp := app.New()
+	myWindow := myApp.NewWindow("pkr")
+	myWindow.Resize(fyne.NewSize(500, 500))
 
-func run(window *app.Window) error {
-	theme := material.NewTheme()
-	var text widget.Editor
-	var list widget.List
-	var ops op.Ops
-	for {
-		switch e := window.Event().(type) {
-		case app.DestroyEvent:
-			return e.Err
-		case app.FrameEvent:
-			gtx := app.NewContext(&ops, e)
+	sl := []string{}
+	data := binding.BindStringList(&sl)
 
-			outputs := getCompletions(text.Text())
-			fmt.Println(text.Text())
+	input := widget.NewEntry()
+	input.SetPlaceHolder("Type you little maniac...")
+	input.OnChanged = func(s string) {
+		// fmt.Println(s)
+		completions := getCompletions(s)
 
-			input := material.Editor(theme, &text, "Type here...")
-			input.Font.Typeface = "Dank Mono"
-			input.TextSize = 20
-			input.Editor.SingleLine = true
-
-			labels := []material.LabelStyle{}
-			for _, out := range outputs {
-				lbl := material.Label(theme, 20, out)
-				lbl.Font.Typeface = "Dank Mono"
-				lbl.TextSize = 20
-
-				labels = append(labels, lbl)
-			}
-
-			lst := material.List(theme, &list)
-			list.Alignment = layout.Start
-
-			layout.Flex{Axis: layout.Vertical}.Layout(gtx,
-				layout.Rigid(input.Layout),
-				layout.Rigid(func(gtx layout.Context) layout.Dimensions {
-					return lst.Layout(
-						gtx,
-						len(labels),
-						func(gtx layout.Context, i int) layout.Dimensions {
-							return labels[i].Layout(gtx)
-						})
-				}))
-
-			// render
-			e.Frame(gtx.Ops)
-		default:
-			fmt.Println(e)
-		}
+		// FIXME: somehow a simple set is not working
+		data.Set([]string{})
+		data.Set(completions)
 	}
+
+	input.OnSubmitted = func(s string) {
+		items, err := data.Get()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		if len(items) > 0 {
+			fmt.Println(items[0])
+		}
+
+		myWindow.Close()
+	}
+
+	list := widget.NewListWithData(
+		data,
+		func() fyne.CanvasObject {
+			return widget.NewLabel("")
+		},
+		func(i binding.DataItem, o fyne.CanvasObject) {
+			str, _ := i.(binding.String).Get()
+			o.(*widget.Label).SetText(str)
+		})
+	list.Resize(fyne.NewSize(500, 300))
+
+	// make list update as soon as data changes via input
+	data.AddListener(binding.NewDataListener(func() {
+		// fmt.Println("refreshing...")
+		list.Refresh()
+	}))
+
+	cont := container.NewVBox(input, list)
+	myWindow.SetContent(cont)
+	myWindow.ShowAndRun()
 }
