@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -50,6 +51,11 @@ func filterItems(items []string, subs string) []string {
 }
 
 func main() {
+	rc, err := getRegisteredCompleters()
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var myWindow fyne.Window
 
 	myApp := app.New()
@@ -73,7 +79,7 @@ func main() {
 		hasInput = true
 		sl = initial
 	} else {
-		sl = getCompletions("")
+		sl = getCompletions("", rc)
 	}
 
 	data := binding.BindStringList(&sl)
@@ -118,7 +124,7 @@ func main() {
 		if hasInput {
 			completions = filterItems(initial, s)
 		} else {
-			completions = getCompletions(s)
+			completions = getCompletions(s, rc)
 		}
 
 		// FIXME: somehow a simple set is not working

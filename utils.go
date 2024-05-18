@@ -8,39 +8,28 @@ import (
 	"strings"
 )
 
-type Completer struct {
-	Command string
-	Mode    string
-	Help    string
-}
-
-// TODO: should add ability to cache results
-// TODO: this should be read from a config file
-var registeredCompletors = map[string]Completer{
-	"calc": {Command: "bc", Mode: "stdin", Help: "Calculates an expression using bc"},
-}
-
 // help completions should not be selectable
 // TODO: Implement non selectable completions
-func helpCompletions() []string {
+func helpCompletions(rc map[string]Completer) []string {
 	outs := []string{}
 
-	for k, v := range registeredCompletors {
+	for k, v := range rc {
 		outs = append(outs, k+" - "+v.Help)
 	}
 
 	return outs
 }
 
-func getCompletions(input string) []string {
+// TODO: should add ability to cache results
+func getCompletions(input string, rc map[string]Completer) []string {
 	if len(input) == 0 {
-		return helpCompletions()
+		return helpCompletions(rc)
 	}
 
 	splits := strings.Split(input, " ")
 	completions := []string{}
 
-	if completer, ok := registeredCompletors[splits[0]]; ok {
+	if completer, ok := rc[splits[0]]; ok {
 		switch completer.Mode {
 		case "stdin":
 			completions = commandOutputWithStdin(completer.Command, strings.Join(splits[1:], " "))

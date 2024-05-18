@@ -1,0 +1,5 @@
+completers:
+  - name: calc
+    help: "Calculate an expression"
+    command: "bc"
+    mode: "stdin"
