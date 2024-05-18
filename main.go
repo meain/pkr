@@ -15,6 +15,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+const (
+	width  = 700
+	height = 300
+)
+
 func getInput() []string {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
@@ -48,22 +53,17 @@ func main() {
 	var myWindow fyne.Window
 
 	myApp := app.New()
+	myApp.Settings().SetTheme(CustomTheme())
 
+	// Make a borderless window
 	drv := myApp.Driver()
 	if drv, ok := drv.(desktop.Driver); ok {
 		myWindow = drv.CreateSplashWindow()
 	}
 
-	myWindow.Resize(fyne.NewSize(500, 300))
+	myWindow.Resize(fyne.NewSize(width, height))
 	myWindow.CenterOnScreen()
 	myWindow.SetPadded(true)
-
-	// FIXME: not working
-	// myWindow.Canvas().SetOnTypedKey(func(ev *fyne.KeyEvent) {
-	// 	if ev.Name == fyne.KeyEscape {
-	// 		myWindow.Close()
-	// 	}
-	// })
 
 	sl := []string{}
 	hasInput := false
@@ -71,15 +71,45 @@ func main() {
 
 	if len(initial) > 0 {
 		hasInput = true
-
-		for _, line := range initial {
-			sl = append(sl, line)
-		}
+		sl = initial
+	} else {
+		sl = getCompletions("")
 	}
 
 	data := binding.BindStringList(&sl)
 
-	input := widget.NewEntry()
+	list := widget.NewListWithData(
+		data,
+		func() fyne.CanvasObject {
+			return widget.NewLabel("")
+		},
+		func(i binding.DataItem, o fyne.CanvasObject) {
+			str, _ := i.(binding.String).Get()
+			o.(*widget.Label).SetText(str)
+		})
+	list.Resize(fyne.NewSize(width, height))
+
+	list.OnSelected = func(id int) {
+		items, err := data.Get()
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		if len(items) > 0 {
+			fmt.Println(items[id])
+		}
+
+		myWindow.Close()
+	}
+
+	// make list update as soon as data changes via input
+	data.AddListener(binding.NewDataListener(func() {
+		// fmt.Println("refreshing...")
+		list.Refresh()
+		list.Resize(fyne.NewSize(width, height))
+	}))
+
+	input := NewSearchField(myWindow, list)
 	input.SetPlaceHolder("Type you little maniac...")
 	input.OnChanged = func(s string) {
 		// fmt.Println(s)
@@ -110,38 +140,8 @@ func main() {
 		myWindow.Close()
 	}
 
-	list := widget.NewListWithData(
-		data,
-		func() fyne.CanvasObject {
-			return widget.NewLabel("")
-		},
-		func(i binding.DataItem, o fyne.CanvasObject) {
-			str, _ := i.(binding.String).Get()
-			o.(*widget.Label).SetText(str)
-		})
-	list.Resize(fyne.NewSize(500, 400))
-
-	list.OnSelected = func(id int) {
-		items, err := data.Get()
-		if err != nil {
-			fmt.Println(err)
-		}
-
-		if len(items) > 0 {
-			fmt.Println(items[id])
-		}
-
-		myWindow.Close()
-	}
-
-	// make list update as soon as data changes via input
-	data.AddListener(binding.NewDataListener(func() {
-		// fmt.Println("refreshing...")
-		list.Refresh()
-		list.Resize(fyne.NewSize(500, 400))
-	}))
-
 	cont := container.NewVBox(input, list)
+
 	myWindow.SetContent(cont)
 	myWindow.Canvas().Focus(input)
 	myWindow.ShowAndRun()
