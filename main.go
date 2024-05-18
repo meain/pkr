@@ -93,7 +93,6 @@ func main() {
 			str, _ := i.(binding.String).Get()
 			o.(*widget.Label).SetText(str)
 		})
-	list.Resize(fyne.NewSize(width, height))
 
 	list.OnSelected = func(id int) {
 		items, err := data.Get()
@@ -110,16 +109,12 @@ func main() {
 
 	// make list update as soon as data changes via input
 	data.AddListener(binding.NewDataListener(func() {
-		// fmt.Println("refreshing...")
 		list.Refresh()
-		list.Resize(fyne.NewSize(width, height))
 	}))
 
 	input := NewSearchField(myWindow, list)
 	input.SetPlaceHolder("Type you little maniac...")
 	input.OnChanged = func(s string) {
-		// fmt.Println(s)
-
 		completions := []string{}
 		if hasInput {
 			completions = filterItems(initial, s)
@@ -135,18 +130,17 @@ func main() {
 	input.OnSubmitted = func(s string) {
 		items, err := data.Get()
 		if err != nil {
-			fmt.Println(err)
-			return
+			log.Fatal(err)
 		}
 
 		if len(items) > 0 {
 			fmt.Println(items[0])
+			myWindow.Close()
 		}
-
-		myWindow.Close()
 	}
 
-	cont := container.NewVBox(input, list)
+	cont := container.NewBorder(input, nil, nil, nil, list)
+	cont.Resize(fyne.NewSize(width, height))
 
 	myWindow.SetContent(cont)
 	myWindow.Canvas().Focus(input)
