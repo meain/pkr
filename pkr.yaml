@@ -3,3 +3,7 @@ completers:
     help: "Calculate an expression"
     command: "bc"
     mode: "stdin"
+  - name: echo
+    help: "Echo a string"
+    command: "echo"
+    mode: "args"

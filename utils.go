@@ -33,6 +33,8 @@ func getCompletions(input string, rc map[string]Completer) []string {
 		switch completer.Mode {
 		case "stdin":
 			completions = commandOutputWithStdin(completer.Command, strings.Join(splits[1:], " "))
+		case "args":
+			completions = commandOutputWithArgs(completer.Command, strings.Join(splits[1:], " "))
 		}
 	}
 
@@ -60,6 +62,22 @@ func commandOutputWithStdin(command, input string) []string {
 	stdinPipe.Close()
 
 	if err := cmd.Wait(); err != nil {
+		return []string{"[ERROR] " + command + ": " + err.Error()} // ability to color it (maybe red)
+	}
+
+	if len(stdout.String()) > 0 {
+		return strings.Split(strings.Trim(stdout.String(), "\n"), "\n")
+	}
+
+	return []string{}
+}
+
+func commandOutputWithArgs(command, input string) []string {
+	cmd := exec.Command(command, strings.Split(strings.TrimSpace(input), " ")...)
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+
+	if err := cmd.Run(); err != nil {
 		return []string{"[ERROR] " + command + ": " + err.Error()} // ability to color it (maybe red)
 	}
 
