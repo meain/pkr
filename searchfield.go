@@ -20,7 +20,11 @@ type SearchField struct {
 func (s *SearchField) TypedKey(k *fyne.KeyEvent) {
 	switch k.Name {
 	case fyne.KeyEscape:
-		s.win.Close()
+		if s.Entry.Text == "" {
+			s.win.Close()
+		} else {
+			s.Entry.SetText("")
+		}
 	case fyne.KeyUp:
 		// move to prev item in list
 	case fyne.KeyDown:
