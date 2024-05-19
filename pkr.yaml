@@ -11,3 +11,6 @@ completers:
     help: "ABC linear tickets"
     command: "printf https://linear.com/alcion/issues/ABC-%s"
     mode: "args"
+  - name: uptime # command with no args or input
+    help: "Show system uptime"
+    command: "uptime"

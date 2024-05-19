@@ -35,6 +35,8 @@ func getCompletions(input string, rc map[string]Completer) []string {
 			completions = commandOutputWithStdin(completer.Command, strings.Join(splits[1:], " "))
 		case "args":
 			completions = commandOutputWithArgs(completer.Command, strings.Join(splits[1:], " "))
+		default:
+			completions = commandOutputWithArgs(completer.Command, "")
 		}
 	}
 
