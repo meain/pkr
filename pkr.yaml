@@ -14,6 +14,8 @@ completers:
   - name: uptime # command with no args or input
     help: "Show system uptime"
     command: "uptime"
-  - name: linear # TODO: be able to return action to perform (like open) either here or on individual item
+  - name: linear
     help: "Show linear tickets" # TODO: should be able to return something which can get more info
     command: ",linear-tickets list"
+    action:
+      command: "open https://linear.app/alcion/issue/{{2}}"

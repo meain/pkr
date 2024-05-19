@@ -21,10 +21,10 @@ const (
 	height = 300
 )
 
-func getInput() []string {
+func getInput() []Completion {
 	stat, _ := os.Stdin.Stat()
 	if (stat.Mode() & os.ModeCharDevice) != 0 {
-		return []string{}
+		return []Completion{}
 	}
 
 	data, err := io.ReadAll(io.Reader(os.Stdin))
@@ -34,20 +34,72 @@ func getInput() []string {
 	}
 
 	lines := strings.Split(string(data), "\n")
-	return lines
+
+	completions := []Completion{}
+	for _, line := range lines {
+		completions = append(completions, Completion{text: line, selectable: true})
+	}
+
+	return completions
 }
 
-func filterItems(items []string, subs string) []string {
+func filterItems(items []Completion, subs string) []Completion {
 	subs = strings.ToLower(subs)
-	result := []string{}
+	result := []Completion{}
 
 	for _, item := range items {
-		if strings.Contains(strings.ToLower(item), subs) {
+		if strings.Contains(strings.ToLower(item.text), subs) {
 			result = append(result, item)
 		}
 	}
 
 	return result
+}
+
+func convertToInterface(completions []Completion) []interface{} {
+	result := make([]interface{}, len(completions))
+	for i, v := range completions {
+		result[i] = v
+	}
+
+	return result
+}
+
+func performAction(comp Completion) {
+	if comp.action.Command == "" {
+		fmt.Println(comp.text)
+		return
+	}
+
+	cmd := comp.action.Command
+	var err error
+
+	fmt.Println("Performing:", cmd, comp.text)
+
+	switch comp.action.Mode {
+	case "stdin":
+		_, err = commandOutputWithStdin(cmd, comp.text)
+	case "args":
+		_, err = commandOutputWithArgs(cmd, comp.text)
+	default:
+		if strings.Contains(comp.action.Command, "{{}}") {
+			cmd = strings.ReplaceAll(cmd, "{{}}", comp.text)
+		}
+
+		splits := strings.Split(comp.text, " ")
+		for i, split := range splits {
+			subs := fmt.Sprintf("{{%d}}", i+1)
+			if strings.Contains(comp.action.Command, subs) {
+				cmd = strings.ReplaceAll(cmd, subs, split)
+			}
+		}
+
+		_, err = commandOutputWithArgs(cmd, "")
+	}
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func main() {
@@ -71,7 +123,7 @@ func main() {
 	myWindow.CenterOnScreen()
 	myWindow.SetPadded(true)
 
-	sl := []string{}
+	sl := []Completion{}
 	hasInput := false
 	initial := getInput()
 
@@ -82,7 +134,8 @@ func main() {
 		sl = getCompletions("", rc)
 	}
 
-	data := binding.BindStringList(&sl)
+	isl := convertToInterface(sl)
+	data := binding.BindUntypedList(&isl)
 
 	list := widget.NewListWithData(
 		data,
@@ -90,8 +143,8 @@ func main() {
 			return widget.NewLabel("")
 		},
 		func(i binding.DataItem, o fyne.CanvasObject) {
-			str, _ := i.(binding.String).Get()
-			o.(*widget.Label).SetText(str)
+			obj, _ := i.(binding.Untyped).Get()
+			o.(*widget.Label).SetText(obj.(Completion).text)
 		})
 
 	list.OnSelected = func(id int) {
@@ -101,7 +154,7 @@ func main() {
 		}
 
 		if len(items) > 0 {
-			fmt.Println(items[id])
+			performAction(items[id].(Completion))
 		}
 
 		myWindow.Close()
@@ -115,7 +168,7 @@ func main() {
 	input := NewSearchField(myWindow, list)
 	input.SetPlaceHolder("Type you little maniac...")
 	input.OnChanged = func(s string) {
-		completions := []string{}
+		completions := []Completion{}
 		if hasInput {
 			completions = filterItems(initial, s)
 		} else {
@@ -123,8 +176,8 @@ func main() {
 		}
 
 		// FIXME: somehow a simple set is not working
-		data.Set([]string{})
-		data.Set(completions)
+		data.Set(convertToInterface([]Completion{}))
+		data.Set(convertToInterface(completions))
 	}
 
 	input.OnSubmitted = func(s string) {
@@ -134,7 +187,7 @@ func main() {
 		}
 
 		if len(items) > 0 {
-			fmt.Println(items[0])
+			performAction(items[0].(Completion))
 			myWindow.Close()
 		}
 	}

@@ -7,6 +7,11 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type Action struct {
+	Command string
+	Mode    string
+}
+
 // TODO: user should be able to define if we do additional filtering
 // and if cmd should be one shot
 type Completer struct {
@@ -14,6 +19,7 @@ type Completer struct {
 	Command string
 	Mode    string
 	Help    string
+	Action  Action
 }
 
 func getRegisteredCompleters() (map[string]Completer, error) {
