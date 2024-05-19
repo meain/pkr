@@ -103,14 +103,20 @@ func performAction(comp Completion) {
 }
 
 func main() {
+	initial := getInput()
+	rc := map[string]Completer{}
+	var err error
+
 	fp := "pkr.yaml"
 	if len(os.Args) > 1 {
 		fp = os.Args[1]
 	}
 
-	rc, err := getRegisteredCompleters(fp)
-	if err != nil {
-		log.Fatal(err)
+	if len(initial) == 0 {
+		rc, err = getRegisteredCompleters(fp)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	var myWindow fyne.Window
@@ -130,7 +136,6 @@ func main() {
 
 	sl := []Completion{}
 	hasInput := false
-	initial := getInput()
 
 	if len(initial) > 0 {
 		hasInput = true
