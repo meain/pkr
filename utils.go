@@ -42,7 +42,7 @@ func getCompletions(input string, rc map[string]Completer) []string {
 }
 
 func commandOutputWithStdin(command, input string) []string {
-	cmd := exec.Command(command)
+	cmd := exec.Command(strings.Split(command, " ")[0], strings.Split(command, " ")[1:]...)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 
@@ -73,7 +73,8 @@ func commandOutputWithStdin(command, input string) []string {
 }
 
 func commandOutputWithArgs(command, input string) []string {
-	cmd := exec.Command(command, strings.Split(strings.TrimSpace(input), " ")...)
+	args := append(strings.Split(command, " ")[1:], strings.Split(strings.TrimSpace(input), " ")...)
+	cmd := exec.Command(strings.Split(command, " ")[0], args...)
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
 

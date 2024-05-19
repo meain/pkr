@@ -7,3 +7,7 @@ completers:
     help: "Echo a string"
     command: "echo"
     mode: "args"
+  - name: abc # simple text substitution
+    help: "ABC linear tickets"
+    command: "printf https://linear.com/alcion/issues/ABC-%s"
+    mode: "args"
