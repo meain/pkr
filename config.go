@@ -22,10 +22,10 @@ type Completer struct {
 	Action  Action
 }
 
-func getRegisteredCompleters() (map[string]Completer, error) {
+func getRegisteredCompleters(fp string) (map[string]Completer, error) {
 	t := make(map[string][]Completer)
 
-	data, err := os.ReadFile("pkr.yaml")
+	data, err := os.ReadFile(fp)
 	if err != nil {
 		return nil, errors.Wrap(err, "reading file")
 	}

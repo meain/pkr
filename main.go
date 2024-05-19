@@ -103,7 +103,12 @@ func performAction(comp Completion) {
 }
 
 func main() {
-	rc, err := getRegisteredCompleters()
+	fp := "pkr.yaml"
+	if len(os.Args) > 1 {
+		fp = os.Args[1]
+	}
+
+	rc, err := getRegisteredCompleters(fp)
 	if err != nil {
 		log.Fatal(err)
 	}
